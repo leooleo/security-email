@@ -1,0 +1,22 @@
+{
+  "name": "security-email",
+  "version": "1.0.0",
+  "description": "A fully encrypted email written in Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leooleo/security-email.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/leooleo/security-email/issues"
+  },
+  "homepage": "https://github.com/leooleo/security-email#readme",
+  "dependencies": {
+    "node-forge": "^0.9.1"
+  }
+}
