@@ -55,13 +55,6 @@ module.exports.encryptArray = encryptArray
 module.exports.decodeArray = decodeArray
 module.exports.exportKey = exportKey
 module.exports.importKey = importKey
-var [privateKeyA, publicKeyA] = getKeys()
-var p = exportKey(publicKeyA)
-var pe = importKey(p)
-console.log(p)
-console.log('\n\n')
-console.log(exportKey(pe))
-
 
 // USAGE
 // var [privateKeyA, publicKeyA] = getKeys()
