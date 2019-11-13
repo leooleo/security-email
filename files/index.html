@@ -1,0 +1,108 @@
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+</head>
+
+<h1>Alou</h1>
+
+
+<script>
+    var rsa = forge.pki.rsa;
+    var pki = forge.pki;
+
+    function getKeys() {
+        var keyPair = rsa.generateKeyPair({ bits: 2048 })
+        var private = keyPair.privateKey;
+        var public = keyPair.publicKey;
+
+        return [private, public]
+    }
+
+    function prepareDigitalSignature(privateKey) {
+        var dig = forge.md.sha1.create()
+        dig.update('random string', 'utf8')
+        var signature = privateKey.sign(dig)
+        var digested = dig.digest().bytes()
+
+        var message = digested + '<=======' + signature        
+        var firstHalf = message.slice(0, message.length / 2)
+        var secondHalf = message.slice(message.length / 2, message.length)
+
+        return [firstHalf, secondHalf]
+    }
+
+    function encryptArray(publicKey, array) {
+        for (let i = 0; i < array.length; i++) {
+            array[i] = publicKey.encrypt(array[i])
+        }
+
+        return array
+    }
+
+    function decodeArray(privateKey, array) {
+        for (let i = 0; i < 2; i++) {
+            array[i] = privateKey.decrypt(array[i])
+        }
+
+        return array[0] + array[1]
+    }
+
+    function exportKey(publicKey) {
+        return pki.publicKeyToPem(publicKey)
+    }
+
+    function importKey(pem) {
+        return pki.publicKeyFromPem(pem)
+    }
+
+    function preparePacket() {
+        var pack = prepareDigitalSignature(privateKey)
+        if (serverKey != null) {
+            pack = encryptArray(serverKey, pack)
+        }
+        else {
+            console.log('Server key null')
+            pack = null
+        }
+        return pack
+    }
+
+    var [privateKey, publicKey] = getKeys()
+    var serverKey = null
+    let socket = new WebSocket("ws://localhost:3000")
+
+    socket.onopen = function (e) {
+        console.log("[open] Connection established")
+        var exportableKey = exportKey(publicKey)
+        socket.send(exportableKey)
+    }
+
+    socket.onmessage = function (event) {
+        var message = event.data
+        if (message.includes('BEGIN PUBLIC KEY')) {
+            serverKey = importKey(message)
+            var packet = preparePacket()           
+            socket.send(packet[0] + '&---&' + packet[1])
+        }
+        else {
+            try {
+                var response  = privateKey.decrypt(message);
+                console.log(`[message] Encrypted data received from server: ${response}`)    
+            } catch (error) {
+                console.log(`[message] Plain text received from server: ${message}`)    
+            }
+            
+        }
+    }
+
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
+        } else {
+            console.log('[close] Connection died')
+        }
+    }
+
+    socket.onerror = function (error) {
+        console.log(`[error] ${error.message}`)
+    }
+</script>
