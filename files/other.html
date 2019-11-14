@@ -1,0 +1,53 @@
+<head>
+    <script src="bundle.js" type="text/javascript"></script>
+</head>
+
+<body>
+    teste
+</body>
+
+<script>
+    var keys = generateKeyPair()
+    var publicKey = getPublicKey(keys)
+    var serverPublic = null
+
+    let socket = new WebSocket("ws://localhost:8080")
+
+    socket.onopen = function (e) {
+        console.log("[open] Connection established")        
+        socket.send(publicKey)
+    }
+
+    socket.onmessage = function (event) {
+        var message = event.data        
+
+        if (message.includes('BEGIN PUBLIC KEY')) {
+           serverPublic = setPublicKey(message)        
+           console.log("[crypto] Exchanged public keys")
+           var cryptoMessage = serverPublic.encrypt('Fala Irmão', 'base64')
+           socket.send(cryptoMessage)
+        }
+        // else {
+        //     try {
+        //         var response  = privateKey.decrypt(message);
+        //         console.log(`[message] Encrypted data received from server: ${response}`)    
+        //     } catch (error) {
+        //         console.log(`[message] Plain text received from server: ${message}`)    
+        //     }
+            
+        // }
+    }
+
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
+        } else {
+            console.log('[close] Connection died')
+        }
+    }
+
+    socket.onerror = function (error) {
+        console.log(`[error] ${error.message}`)
+    }
+    
+</script>

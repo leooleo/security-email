@@ -1,77 +1,72 @@
-var forge = require('node-forge');
+const NodeRSA = require('node-rsa');
 
-var rsa = forge.pki.rsa;
-var pki = forge.pki;
+function generateKeyPair() {
+    console.log('Generating key Pair...')
+    var keyPair = new NodeRSA()
+    keyPair.generateKeyPair()
 
-function getKeys() {
-    var keyPair = rsa.generateKeyPair({ bits: 2048})
-    var private = keyPair.privateKey;
-    var public = keyPair.publicKey;
-
-    return [private, public]
+    console.log('Generated!')
+    return keyPair
 }
 
-function prepareDigitalSignature(privateKey) {
-    var dig = forge.md.sha1.create()
-    dig.update('random string', 'utf8')
-    var signature = privateKey.sign(dig)
-    var digested = dig.digest().bytes()
-
-    var message = digested + '<=======' + signature
-    console.log(message.length)
-    var firstHalf = message.slice(0, message.length / 2)
-    var secondHalf = message.slice(message.length / 2, message.length)
-
-    return [firstHalf, secondHalf]
+function getPublicKey(keys) {
+    return keys.exportKey('public')
 }
 
-function encryptArray(publicKey, array) {
-    for(let i=0;i< array.length; i++) {
-        array[i] = publicKey.encrypt(array[i])
-    }
-
-    return array
+function setPublicKey(pemFile) {
+    var key = new NodeRSA()
+    return key.importKey(pemFile,'public')
 }
 
-function decodeArray(privateKey, array) {
-    for(let i=0;i<2; i++) {
-        array[i] = privateKey.decrypt(array[i])
-    }
+module.exports.generateKeyPair = generateKeyPair
+module.exports.getPublicKey = getPublicKey
+module.exports.setPublicKey = setPublicKey
 
-    return array[0] + array[1]
-}
+// Usage
+// const serverKeys = generateKeyPair()
+// const clientKeys = generateKeyPair()
 
-function exportKey(publicKey) {
-   return pki.publicKeyToPem(publicKey)
-}
+// var pemServer = getPublicKey(serverKeys)
+// var pemClient = getPublicKey(clientKeys)
 
-function importKey(pem) {
-    return pki.publicKeyFromPem(pem)
-}
+// var publicServerKey = setPublicKey(pemServer)
+// var publicClientKey = setPublicKey(pemClient)
 
-module.exports.getKeys = getKeys
-module.exports.prepareDigitalSignature = prepareDigitalSignature
-module.exports.encryptArray = encryptArray
-module.exports.decodeArray = decodeArray
-module.exports.exportKey = exportKey
-module.exports.importKey = importKey
+// var message = serverKeys.encryptPrivate('Fala meu irmao tudo bom?', 'base64')
+// message = publicClientKey.encrypt(message, 'base64')
 
-// USAGE
-// var [privateKeyA, publicKeyA] = getKeys()
-// var [privateKeyB, publicKeyB] = getKeys()
+// message = clientKeys.decrypt(message, 'utf8')
+// message = publicServerKey.decryptPublic(message, 'utf8')
+// console.log(message);
 
-// var array = prepareDigitalSignature(privateKeyA)
-// var message = array[0] + array[1]
-// array = encryptArray(publicKeyB, array)
+// const keyServer = new NodeRSA();
+// keyServer.generateKeyPair();
 
-// //send array
+// const keyClient = new NodeRSA();
+// keyClient.generateKeyPair();
 
-// var newMessage = decodeArray(privateKeyB,array);
+// console.log('Exchanging keys...');
 
-// console.log(newMessage == message)
-// var spl = newMessage.split('<=======')
-// var a = spl[0]
-// var b = spl[1]
+// var exported = keyServer.exportKey('public')
 
-// var verified = publicKeyA.verify(a, b)
-// console.log(verified)
+// var serverPublicKey = new NodeRSA();
+// serverPublicKey.importKey(exported,'public')
+
+// exported = keyClient.exportKey('public')
+
+// var clientPublicKey = new NodeRSA();
+// clientPublicKey.importKey(exported,'public')
+
+// console.log('exchanged!');
+
+// var message = 'Um criptograma'
+
+// message = keyClient.encryptPrivate(message, 'base64')
+// message = serverPublicKey.encrypt(message, 'base64')
+
+// console.log(message);
+
+// message = keyServer.decrypt(message, 'utf8')
+// message = clientPublicKey.decryptPublic(message, 'utf8')
+
+// console.log(message);
