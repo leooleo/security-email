@@ -3,39 +3,41 @@
 </head>
 
 <body>
-    teste
+    <h1 style="text-align: center;">Sign up page</h1>
 </body>
 
 <script>
     var keys = generateKeyPair()
     var publicKey = getPublicKey(keys)
     var serverPublic = null
+    const myName = 'Léo'
 
     let socket = new WebSocket("ws://localhost:8080")
 
+    // communication is started by sendind local public key
+    function startCommunication() {
+        socket.send(publicKey + 'user:' + myName)
+    }
+
     socket.onopen = function (e) {
-        console.log("[open] Connection established")        
-        socket.send(publicKey)
+        console.log("[open] Connection established")
+        socket.send(publicKey + 'user:' + myName)
     }
 
     socket.onmessage = function (event) {
-        var message = event.data        
+        var message = event.data
 
         if (message.includes('BEGIN PUBLIC KEY')) {
-           serverPublic = setPublicKey(message)        
-           console.log("[crypto] Exchanged public keys")
-           var cryptoMessage = serverPublic.encrypt('Fala Irmão', 'base64')
-           socket.send(cryptoMessage)
+            serverPublic = setPublicKey(message)
+            console.log("[crypto] Exchanged public keys")
+
+            var obj = {'user': myName, 'data': 'Olá Amigo, tudo bom?' }
+            var packet = JSON.stringify(obj)
+            packet = keys.encryptPrivate(packet, 'base64')
+            packet = serverPublic.encrypt(packet + 'user:' + myName, 'base64')
+
+            socket.send(packet)            
         }
-        // else {
-        //     try {
-        //         var response  = privateKey.decrypt(message);
-        //         console.log(`[message] Encrypted data received from server: ${response}`)    
-        //     } catch (error) {
-        //         console.log(`[message] Plain text received from server: ${message}`)    
-        //     }
-            
-        // }
     }
 
     socket.onclose = function (event) {
@@ -49,5 +51,5 @@
     socket.onerror = function (error) {
         console.log(`[error] ${error.message}`)
     }
-    
+
 </script>
