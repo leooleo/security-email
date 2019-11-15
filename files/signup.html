@@ -1,0 +1,53 @@
+<head>
+    <script src="bundle.js" type="text/javascript"></script>
+    <script src="signupWs.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div id="bodyel">
+        <h1 style="text-align: center;">Sign up page</h1>
+        Username: <input v-model="userName" placeholder="eg. Méo Loraes">
+        <br>
+        <br>
+        <button type="button" v-on:click="checkUser(userName)">Check</button>
+    </div>
+</body>
+
+<script>
+    var vm = new Vue({
+        el: '#bodyel',
+        data: {
+            userName: ''
+        },
+        created: function () {
+
+        },
+        methods: {
+            checkUser(name) {
+                axios.get('http://localhost:8080/client/' + name)
+                    .then(function (response) {
+                        if (response.data == 'ok') {
+                            startCommunication(name)
+                            console.log('end!');
+                        }
+                        else {
+                            alert('User already taken')
+                        }
+                    })
+                    .catch(function (error) {
+                        // handle error
+                        console.log(error);
+                    })
+            }
+        }
+    })
+
+</script>
+
+<style>
+    body {
+        text-align: center;
+    }
+</style>

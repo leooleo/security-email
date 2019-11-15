@@ -1,10 +1,13 @@
 const WebSocket = require('ws')
 const express = require('express')
 const app = express()
-const port = 8080
+const port = process.env.PORT || 8080
 const crypto = require('./src/encryptionWrapper')
+const cors = require('cors');
 
 var root = __dirname + '/files/'
+
+app.use(cors())
 
 const server = app.listen(port, () => console.log(`Listening on port ${port}!`))
 const webSocketServer = new WebSocket.Server({ server: server })
@@ -14,7 +17,7 @@ var publicKey = crypto.getPublicKey(keys)
 var clients = {}
 
 app.get('/', function (req, res) {
-    res.sendFile(root + 'other.html');
+    res.sendFile(root + 'signup.html');
 })
 
 app.get('/key/:client', function (req, res) {
@@ -43,6 +46,11 @@ app.get('/client/:client', function (req, res) {
 app.get('/bundle.js', function (req, res) {
     res.type('.js')
     res.sendFile(root + 'bundle.js');
+})
+
+app.get('/signupWs.js', function (req, res) {
+    res.type('.js')
+    res.sendFile(root + 'signupWs.js');
 })
 
 webSocketServer.on('connection', function connection(socket) {
