@@ -9,16 +9,40 @@
 <body>
     <div id="signin">
         <div v-if="signed">
-            <h1>Send Message</h1>
-            To: <input v-model="destinatary" placeholder="eg. Méo Loraes">
-            <br>
-            <br>
-            Message: <input v-model="message">
-            <br>
-            <br>
-            <button type="button" v-on:click="submit()">Submit message</button>
+            <div class="topnav">
+                <a href="#" v-on:click="changePage('arrivedMessages')">Arrived Messages</a>
+                <a href="#" v-on:click="changePage('sentMessages')">Your Sent Messages</a>
+                <a href="#" v-on:click="changePage('sendMessage')">Send a Message</a>
+                <a href="#" v-on:click="refresh()">refresh</a>
+            </div>
+            <div v-if=" page == 'sendMessage' ">
+                <h1>Send Message</h1>
+                To: <input v-model="destinatary" placeholder="eg. Méo Loraes">
+                <br>
+                <br>
+                Message: <input v-model="message">
+                <br>
+                <br>
+                <button type="button" v-on:click="submit()">Submit message</button>
+            </div>
+            <div v-else-if=" page == 'arrivedMessages' ">
+                <h1 style="text-align: center;"> Arrived Messages</h1>
+                <ul>
+                    <li v-for="msg in arrivedMessages" style="text-align: left; padding-left: 30px;">
+                        From {{ msg['sender'] }}: {{ msg['message'] }}
+                    </li>
+                </ul>
+            </div>
+            <div v-else-if=" page == 'sentMessages' ">
+                <h1 style="text-align: center;"> Sent Messages</h1>
+                <ul>
+                    <li v-for="msg in sentMessages" style="text-align: left; padding-left: 30px;">
+                        To {{ msg['destinatary'] }}: {{ msg['message'] }}
+                    </li>
+                </ul>
+            </div>
         </div>
-        <div v-else>
+        <div v-else style="text-align: center;">
             <h1>Sign in</h1>
             Username: <input v-model="userName" placeholder="eg. Méo Loraes">
             <div v-if="usercheck">
@@ -61,24 +85,39 @@
             usercheck: false,
             signed: false,
             message: '',
-            destinatary: ''
+            destinatary: '',
+            page: 'arrivedMessages',
+            arrivedMessages: [],
+            sentMessages: []
         },
         methods: {
-            async getMyMessages() {
-                var response = await axios.get('http://localhost:8080/arrived/' + this.userName)
-                var a = response.data[3]['message']
-                
-                console.log(privateKey.decrypt(a, 'utf-8'));
+            async getMessages(type) {
+                var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
+                var data = response.data
+                console.log(data);
+                for (let i = 0; i < data.length; i++) {
+                    var obj = data[i]
+
+                    var message = obj['message']
+                    var decryptedMessage = privateKey.decrypt(message, 'utf-8')
+
+                    obj['message'] = decryptedMessage
+                    data[i] = obj
+                }
+                if (type == 'arrived')
+                    this.arrivedMessages = data
+                else
+                    this.sentMessages = data
             },
             async submit() {
                 var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
-                if(response.data == 'no such client') {
+                if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
                     return
                 }
                 var destinataryKey = setPublicKey(response.data)
                 var message = this.message
-                message = {'sender': publicKey.encrypt(message, 'base64'), 'destinatary': destinataryKey.encrypt(message, 'base64')}
+                message = { 'sender': publicKey.encrypt(message, 'base64'), 'destinatary': destinataryKey.encrypt(message, 'base64') }
                 message = privateKey.encryptPrivate(JSON.stringify(message), 'base64')
                 var packet = {
                     'message': message,
@@ -87,6 +126,9 @@
                 }
                 var encryptedpacket = serverKey.encrypt(JSON.stringify(packet), 'base64')
                 sendMessage(encryptedpacket)
+                alert('Submited successfully!')
+                this.message = ''
+                this.destinatary = ''
             },
             async checkUser() {
                 var response = await axios.get('http://localhost:8080/client/' + this.userName)
@@ -97,6 +139,13 @@
                     this.usercheck = true
                 }
             },
+            changePage(newPage) {
+                this.page = newPage
+            },
+            refresh() {
+                this.getMessages('arrived')
+                this.getMessages('sent')
+            },
             sign() {
                 var hash = forge.md.sha256.create()
                 hash.update(this.password)
@@ -105,7 +154,8 @@
                 if (pwd == hashed) {
                     this.signed = true
                     setSession()
-                    this.getMyMessages()
+                    this.getMessages('arrived')
+                    this.getMessages('sent')
                 }
                 else {
                     alert('Incorrect Password');
@@ -116,7 +166,7 @@
 </script>
 
 <style>
-    body {
-        text-align: center;
+    #center {
+        text-align: left;
     }
 </style>
