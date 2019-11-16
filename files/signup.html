@@ -1,4 +1,5 @@
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
     <script src="bundle.js" type="text/javascript"></script>
     <script src="signupWs.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
@@ -6,40 +7,52 @@
 </head>
 
 <body>
-    <div id="bodyel">
+
+    <div id="singup">
         <h1 style="text-align: center;">Sign up page</h1>
         Username: <input v-model="userName" placeholder="eg. Méo Loraes">
-        <br>
-        <br>
-        <button type="button" v-on:click="checkUser(userName)">Check</button>
+        <div v-if="usercheck">
+            <br>
+            Password: <input type='password' v-model="password" placeholder="eg. Méo Loraes">
+            <br>
+            <br>
+            <button type="button" v-on:click="submit()">submit</button>
+        </div>
+        <div v-else>
+            <br>
+            <button type="button" v-on:click="checkUser()">Check</button>
+        </div>
     </div>
+
+
 </body>
 
 <script>
-    var vm = new Vue({
-        el: '#bodyel',
+    if(localStorage['pwd'] != null) {        
+        window.location.href = '/signin'
+    }
+    var signup = new Vue({
+        el: '#singup',
         data: {
-            userName: ''
-        },
-        created: function () {
-
+            userName: '',
+            password: '',
+            usercheck: false
         },
         methods: {
-            checkUser(name) {
-                axios.get('http://localhost:8080/client/' + name)
-                    .then(function (response) {
-                        if (response.data == 'ok') {
-                            startCommunication(name)
-                            console.log('end!');
-                        }
-                        else {
-                            alert('User already taken')
-                        }
-                    })
-                    .catch(function (error) {
-                        // handle error
-                        console.log(error);
-                    })
+            async checkUser() {
+                var response = await axios.get('http://localhost:8080/client/' + this.userName)
+                if (response.data == 'no such client') {
+                    this.usercheck = true
+                }
+                else {
+                    alert('User already taken')
+                }
+            },
+            submit() {
+                var hash = forge.md.sha256.create()
+                hash.update(this.password)
+                var hashed = hash.digest().toHex()
+                startCommunication(this.userName, hashed)
             }
         }
     })

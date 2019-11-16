@@ -16,8 +16,16 @@ var keys = crypto.generateKeyPair()
 var publicKey = crypto.getPublicKey(keys)
 var clients = {}
 
-app.get('/', function (req, res) {
+app.get('/signup', function (req, res) {
     res.sendFile(root + 'signup.html');
+})
+
+app.get('/signin', function (req, res) {
+    res.sendFile(root + 'signin.html');
+})
+
+app.get('/index', function (req, res) {
+    res.sendFile(root + 'index.html');
 })
 
 app.get('/key/:client', function (req, res) {
@@ -36,10 +44,10 @@ app.get('/client/:client', function (req, res) {
     var client = req.params.client
     console.log(client);
     if (client in clients) {        
-        res.send('error')
+        res.send('taken')
     }
     else {
-        res.send('ok')
+        res.send('no such client')
     }
 })
 

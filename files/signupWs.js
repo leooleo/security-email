@@ -2,12 +2,14 @@ var keys = null
 var publicKey = null
 var serverPublic = null
 var myName = null
+var password = null 
 
 let socket = new WebSocket("ws://localhost:8080")
 
 // communication is started by sendind local public key
-window.startCommunication = function startCommunication(name) {
+window.startCommunication = function startCommunication(name, pwd) {
     myName = name
+    password = pwd
     keys = generateKeyPair()
     publicKey = getPublicKey(keys)
     socket.send(publicKey + 'user:' + myName)
@@ -23,12 +25,13 @@ socket.onmessage = function (event) {
 
     if (message.includes('BEGIN PUBLIC KEY')) {
         serverPublic = setPublicKey(message)
-        console.log("[crypto] Exchanged public keys")
+        console.log("[crypto] Exchanged public keys")        
 
         localStorage.setItem('prk', keys.exportKey('private'));
         localStorage.setItem('puk', keys.exportKey('public'));
         localStorage.setItem('sek', serverPublic.exportKey('public'));
-        document.location.href = 'https://www.youtube.com/';
+        localStorage.setItem('pwd', password)
+        document.location.href = '/signin';
         // var obj = { 'user': myName, 'data': 'Olá Amigo, tudo bom?' }
         // var packet = JSON.stringify(obj)
         // packet = keys.encryptPrivate(packet, 'base64')
