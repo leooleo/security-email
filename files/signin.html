@@ -7,10 +7,112 @@
 </head>
 
 <body>
-    <h1>Sign in</h1>
+    <div id="signin">
+        <div v-if="signed">
+            <h1>Send Message</h1>
+            To: <input v-model="destinatary" placeholder="eg. Méo Loraes">
+            <br>
+            <br>
+            Message: <input v-model="message">
+            <br>
+            <br>
+            <button type="button" v-on:click="submit()">Submit message</button>
+        </div>
+        <div v-else>
+            <h1>Sign in</h1>
+            Username: <input v-model="userName" placeholder="eg. Méo Loraes">
+            <div v-if="usercheck">
+                <br>
+                Password: <input type='password' v-model="password">
+                <br>
+                <br>
+                <button type="button" v-on:click="sign()">Sign in</button>
+            </div>
+            <div v-else>
+                <br>
+                <button type="button" v-on:click="checkUser()">Check</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
+    if (localStorage['pwd'] == null) {
+        window.location.href = '/signup'
+    }
+
+    var privateKey = null
+    var publicKey = null
+    var serverKey = null
+
+    function setSession() {
+        console.log('[crypto] Setting keys...');
+        privateKey = setPrivateKey(localStorage['prk'])
+        publicKey = setPublicKey(localStorage['puk'])
+        serverKey = setPublicKey(localStorage['sek'])
+        console.log('[crypto] Keys ready');
+    }
+    setSession()
+    var signin = new Vue({
+        el: '#signin',
+        data: {
+            userName: '',
+            password: '',
+            usercheck: false,
+            signed: false,
+            message: '',
+            destinatary: ''
+        },
+        methods: {
+            async getMyMessages() {
+                var response = await axios.get('http://localhost:8080/arrived/' + this.userName)
+                var a = response.data[3]['message']
+                
+                console.log(privateKey.decrypt(a, 'utf-8'));
+            },
+            async submit() {
+                var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
+                if(response.data == 'no such client') {
+                    alert('Destinatary does not exist')
+                    return
+                }
+                var destinataryKey = setPublicKey(response.data)
+                var message = this.message
+                message = {'sender': publicKey.encrypt(message, 'base64'), 'destinatary': destinataryKey.encrypt(message, 'base64')}
+                message = privateKey.encryptPrivate(JSON.stringify(message), 'base64')
+                var packet = {
+                    'message': message,
+                    'sender': this.userName,
+                    'destinatary': this.destinatary
+                }
+                var encryptedpacket = serverKey.encrypt(JSON.stringify(packet), 'base64')
+                sendMessage(encryptedpacket)
+            },
+            async checkUser() {
+                var response = await axios.get('http://localhost:8080/client/' + this.userName)
+                if (response.data == 'no such client') {
+                    alert('No such user')
+                }
+                else {
+                    this.usercheck = true
+                }
+            },
+            sign() {
+                var hash = forge.md.sha256.create()
+                hash.update(this.password)
+                var hashed = hash.digest().toHex()
+                var pwd = localStorage['pwd']
+                if (pwd == hashed) {
+                    this.signed = true
+                    setSession()
+                    this.getMyMessages()
+                }
+                else {
+                    alert('Incorrect Password');
+                }
+            }
+        }
+    })
 </script>
 
 <style>

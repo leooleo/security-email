@@ -4495,6 +4495,11 @@
       return key.importKey(pemFile, 'public')
     }
 
+    window.setPrivateKey = function setPrivateKey(pemFile) {
+      var key = new NodeRSA()
+      return key.importKey(pemFile, 'private')
+    }
+
   }, { "node-rsa": 7 }], 25: [function (require, module, exports) {
     var asn1 = exports;
 

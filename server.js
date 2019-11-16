@@ -15,12 +15,14 @@ const webSocketServer = new WebSocket.Server({ server: server })
 var keys = crypto.generateKeyPair()
 var publicKey = crypto.getPublicKey(keys)
 var clients = {}
+var sentMessages = {}
+var arrivedMessages = {}
 
 app.get('/signup', function (req, res) {
     res.sendFile(root + 'signup.html');
 })
 
-app.get('/signin', function (req, res) {
+app.get('/', function (req, res) {
     res.sendFile(root + 'signin.html');
 })
 
@@ -28,9 +30,27 @@ app.get('/index', function (req, res) {
     res.sendFile(root + 'index.html');
 })
 
+app.get('/arrived/:client', function (req, res) {
+    var client = req.params.client;
+    var packet = arrivedMessages[client]
+    res.json(packet);
+})
+
+app.get('/sent/:client', function (req, res) {
+    var client = req.params.client;
+    var packet = sentMessages[client]
+    res.json(packet);
+})
+
+app.get('/clear', function (req, res) {
+    var clients = {}
+    var sentMessages = {}
+    var arrivedMessages = {}
+    res.send('ok');
+})
+
 app.get('/key/:client', function (req, res) {
     var client = req.params.client
-    console.log(client);
     if (client in clients) {
         var packet = crypto.getPublicKey(clients[client])
         res.send(packet)
@@ -42,8 +62,7 @@ app.get('/key/:client', function (req, res) {
 
 app.get('/client/:client', function (req, res) {
     var client = req.params.client
-    console.log(client);
-    if (client in clients) {        
+    if (client in clients) {
         res.send('taken')
     }
     else {
@@ -62,7 +81,6 @@ app.get('/signupWs.js', function (req, res) {
 })
 
 webSocketServer.on('connection', function connection(socket) {
-    console.log('Connected')
     socket.on('message', function incoming(message) {
         if (message.includes('BEGIN PUBLIC KEY')) {
             handlePublicKey(message)
@@ -81,22 +99,37 @@ function handlePublicKey(message) {
     var userName = message[1]
 
     clients[userName] = clientPublicKey
+
     console.log('Received public key from client ' + userName)
 }
 
 function handleMessage(message) {
     try {
-        var decrypted = keys.decrypt(message, 'utf-8')        
-        decrypted = decrypted.split('user:')
+        var decrypted = keys.decrypt(message, 'utf-8')
+        var packet = JSON.parse(decrypted)
 
-        var packet = decrypted[0]
-        var userName = decrypted[1]
+        var destinatary = packet['destinatary']
+        var message = packet['message']
+        var sender = packet['sender']
 
-        var thisClientKey = clients[userName]
+        var thisClientKey = clients[sender]
 
-        var finalMessage = thisClientKey.decryptPublic(packet, 'utf-8')
-        console.log('Final message: ' + finalMessage);
-        // var thisClientKey
+        var finalMessage = thisClientKey.decryptPublic(message, 'utf-8')
+        var receivedPacket = JSON.parse(finalMessage)
+
+        if(destinatary in arrivedMessages) {
+            arrivedMessages[destinatary].push({'sender': sender, 'message' : receivedPacket['destinatary']})
+        }
+        else {
+            arrivedMessages[destinatary] = [{'sender': sender, 'message' : receivedPacket['destinatary']}]
+        }
+        if(sender in sentMessages) {
+            sentMessages[sender].push({'destinatary': destinatary, 'message': receivedPacket['sender']})
+        }
+        else {
+            sentMessages[sender] = [{'destinatary': destinatary, 'message': receivedPacket['sender']}]
+        }
+
     } catch (error) {
         console.log('Plain text message: ' + message);
     }

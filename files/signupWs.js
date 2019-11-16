@@ -15,6 +15,10 @@ window.startCommunication = function startCommunication(name, pwd) {
     socket.send(publicKey + 'user:' + myName)
 }
 
+window.sendMessage = function sendMessage(message) {
+    socket.send(message)
+}
+
 socket.onopen = function (e) {
     console.log("[open] Connection established")
     // socket.send(publicKey + 'user:' + myName)
@@ -31,13 +35,16 @@ socket.onmessage = function (event) {
         localStorage.setItem('puk', keys.exportKey('public'));
         localStorage.setItem('sek', serverPublic.exportKey('public'));
         localStorage.setItem('pwd', password)
-        document.location.href = '/signin';
+        document.location.href = '/';
         // var obj = { 'user': myName, 'data': 'Olá Amigo, tudo bom?' }
         // var packet = JSON.stringify(obj)
         // packet = keys.encryptPrivate(packet, 'base64')
         // packet = serverPublic.encrypt(packet + 'user:' + myName, 'base64')
 
         // socket.send(packet)
+    }
+    else {
+        console.log(message);
     }
 }
 
