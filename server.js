@@ -43,9 +43,9 @@ app.get('/sent/:client', function (req, res) {
 })
 
 app.get('/clear', function (req, res) {
-    var clients = {}
-    var sentMessages = {}
-    var arrivedMessages = {}
+    clients = {}
+    sentMessages = {}
+    arrivedMessages = {}
     res.send('ok');
 })
 
