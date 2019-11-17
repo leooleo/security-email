@@ -4,7 +4,7 @@ var serverPublic = null
 var myName = null
 var password = null
 
-let socket = new WebSocket("ws://localhost:8080/")
+let socket = new WebSocket("wss://meomail.herokuapp.com/")
 
 // communication is started by sendind local public key
 window.startCommunication = function startCommunication(name, pwd) {
@@ -58,7 +58,7 @@ socket.onclose = function (event) {
         console.log('[close] Connection died')
     }
     console.log('[reconnect] Trying to reconnect')
-    socket = new WebSocket("ws://localhost:8080/")
+    socket = new WebSocket("wss://meomail.herokuapp.com/")
 }
 
 socket.onerror = function (error) {
