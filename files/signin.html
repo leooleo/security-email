@@ -68,7 +68,7 @@
         console.log('[crypto] Setting keys...');
         var encryptedPrivateKey = localStorage['prk']
         var bytes = CryptoJS.AES.decrypt(encryptedPrivateKey.toString(), pwd);
-        privateKey = bytes.toString(CryptoJS.enc.Utf8);        
+        privateKey = setPrivateKey(bytes.toString(CryptoJS.enc.Utf8))
         publicKey = setPublicKey(localStorage['puk'])
         serverKey = setPublicKey(localStorage['sek'])
         console.log('[crypto] Keys ready');
@@ -104,7 +104,7 @@
                 else
                     this.sentMessages = data
             },
-            async submit() {
+            async submit() {                
                 var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
                 if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
@@ -120,10 +120,10 @@
                     'destinatary': this.destinatary
                 }
                 var encryptedpacket = serverKey.encrypt(JSON.stringify(packet), 'base64')
-                sendMessage(encryptedpacket)
-                alert('Submited successfully!')
+                sendMessage(encryptedpacket)                
                 this.message = ''
                 this.destinatary = ''
+                this.page = 'sentMessages'
             },
             async checkUser() {
                 var response = await axios.get('http://localhost:8080/client/' + this.userName)

@@ -18,9 +18,15 @@ function setPublicKey(pemFile) {
     return key.importKey(pemFile,'public')
 }
 
+function setPrivateKey(pemFile) {
+    var key = new NodeRSA()
+    return key.importKey(pemFile,'private')
+}
+
 module.exports.generateKeyPair = generateKeyPair
 module.exports.getPublicKey = getPublicKey
 module.exports.setPublicKey = setPublicKey
+module.exports.setPrivateKey = setPrivateKey
 
 // Usage
 // const serverKeys = generateKeyPair()

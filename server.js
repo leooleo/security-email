@@ -4,6 +4,7 @@ const app = express()
 const port = process.env.PORT || 8080
 const crypto = require('./src/encryptionWrapper')
 const cors = require('cors');
+const fs = require('fs');
 
 var root = __dirname + '/files/'
 
@@ -12,11 +13,13 @@ app.use(cors())
 const server = app.listen(port, () => console.log(`Listening on port ${port}!`))
 const webSocketServer = new WebSocket.Server({ server: server })
 
-var keys = crypto.generateKeyPair()
-var publicKey = crypto.getPublicKey(keys)
+var privateKey = null
+var publicKey = null
 var clients = {}
 var sentMessages = {}
 var arrivedMessages = {}
+
+getKeys()
 
 app.get('/signup', function (req, res) {
     res.sendFile(root + 'signup.html');
@@ -91,7 +94,7 @@ webSocketServer.on('connection', function connection(socket) {
     socket.on('message', function incoming(message) {
         if (message.includes('BEGIN PUBLIC KEY')) {
             handlePublicKey(message)
-            socket.send(publicKey)
+            socket.send(crypto.getPublicKey(publicKey))
             console.log('Exchanged public keys!')
         }
         else {
@@ -112,7 +115,7 @@ function handlePublicKey(message) {
 
 function handleMessage(message) {
     try {
-        var decrypted = keys.decrypt(message, 'utf-8')
+        var decrypted = privateKey.decrypt(message, 'utf-8')
         var packet = JSON.parse(decrypted)
 
         var destinatary = packet['destinatary']
@@ -138,6 +141,27 @@ function handleMessage(message) {
         }
 
     } catch (error) {
+        console.log(error);
         console.log('Plain text message: ' + message);
+    }
+}
+
+function getKeys() {
+    // Check if there are keys already stored
+    var files = fs.readdirSync('ssl/')    
+    // If there aren't create and store new ones
+    if(files.length == 0) {        
+        var keys = crypto.generateKeyPair()
+        publicKey = crypto.getPublicKey(keys)
+        fs.writeFileSync('ssl/public.pem', keys.exportKey('public'))
+        fs.writeFileSync('ssl/private.pem', keys.exportKey('private'))
+    }
+    else {
+        console.log('Reading key Pair...')
+        var content = fs.readFileSync('ssl/public.pem')
+        publicKey = crypto.setPublicKey(content)
+        content = fs.readFileSync('ssl/private.pem')
+        privateKey = crypto.setPrivateKey(content)
+        console.log('Readed!')
     }
 }
