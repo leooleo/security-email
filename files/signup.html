@@ -46,9 +46,8 @@
                     alert('User already taken')
                 }
             },
-            submit() {
-                var hash = CryptoJS.SHA512(this.password).toString()              
-                startCommunication(this.userName, hash)
+            submit() {                
+                startCommunication(this.userName, this.password)
             }
         }
     })

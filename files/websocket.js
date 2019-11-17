@@ -2,7 +2,7 @@ var keys = null
 var publicKey = null
 var serverPublic = null
 var myName = null
-var password = null 
+var password = null
 
 let socket = new WebSocket("ws://localhost:8080/")
 
@@ -25,16 +25,19 @@ socket.onopen = function (e) {
 }
 
 socket.onmessage = function (event) {
-    var message = event.data
+    var message = event.data    
 
     if (message.includes('BEGIN PUBLIC KEY')) {
         serverPublic = setPublicKey(message)
-        console.log("[crypto] Exchanged public keys")        
+        console.log("[crypto] Exchanged public keys")
+        var encryptedPrk = CryptoJS.AES.encrypt(keys.exportKey('private'), password)
+        var salt = CryptoJS.lib.WordArray.random(128/8)
 
-        localStorage.setItem('prk', keys.exportKey('private'));
+        localStorage.setItem('prk', encryptedPrk.toString());
         localStorage.setItem('puk', keys.exportKey('public'));
         localStorage.setItem('sek', serverPublic.exportKey('public'));
-        localStorage.setItem('pwd', password)
+        localStorage.setItem('pwd', CryptoJS.SHA512(password + salt).toString())
+        localStorage.setItem('salt', salt)
         document.location.href = '/';
         // var obj = { 'user': myName, 'data': 'Olá Amigo, tudo bom?' }
         // var packet = JSON.stringify(obj)

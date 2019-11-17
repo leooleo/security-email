@@ -15,12 +15,12 @@
                 <a href="#" v-on:click="changePage('sendMessage')">Send a Message</a>
                 <a href="#" v-on:click="refresh()">refresh</a>
             </div>
-            <div v-if=" page == 'sendMessage' ">
+            <div v-if=" page == 'sendMessage' " style="text-align: center;">
                 <h1>Send Message</h1>
                 To: <input v-model="destinatary" placeholder="eg. Méo Loraes">
                 <br>
                 <br>
-                Message: <input v-model="message">
+                Message: <input v-model="message" placeholder="eg. Fala meu parça">
                 <br>
                 <br>
                 <button type="button" v-on:click="submit()">Submit message</button>
@@ -64,9 +64,11 @@
     var publicKey = null
     var serverKey = null
 
-    function setSession() {
+    function setSession(pwd) {
         console.log('[crypto] Setting keys...');
-        privateKey = setPrivateKey(localStorage['prk'])
+        var encryptedPrivateKey = localStorage['prk']
+        var bytes = CryptoJS.AES.decrypt(encryptedPrivateKey.toString(), pwd);
+        privateKey = bytes.toString(CryptoJS.enc.Utf8);        
         publicKey = setPublicKey(localStorage['puk'])
         serverKey = setPublicKey(localStorage['sek'])
         console.log('[crypto] Keys ready');
@@ -75,7 +77,7 @@
         el: '#signin',
         data: {
             userName: '',
-            password: '',            
+            password: '',
             signed: false,
             message: '',
             destinatary: '',
@@ -129,7 +131,7 @@
                     alert('No such user')
                     return false
                 }
-                else {                    
+                else {
                     return true
                 }
             },
@@ -142,12 +144,13 @@
             },
             async sign() {
                 var checked = await this.checkUser()
-                if(!checked) return
-                var hash = CryptoJS.SHA512(this.password).toString()
+                if (!checked) return
+                var salt = localStorage['salt']
+                var hash = CryptoJS.SHA512(this.password + salt).toString()
                 var pwd = localStorage['pwd']
                 if (pwd == hash) {
                     this.signed = true
-                    setSession()
+                    setSession(this.password)
                     this.getMessages('arrived')
                     this.getMessages('sent')
                 }
@@ -158,9 +161,3 @@
         }
     })
 </script>
-
-<style>
-    #center {
-        text-align: left;
-    }
-</style>
