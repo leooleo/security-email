@@ -104,7 +104,7 @@
                 else
                     this.sentMessages = data
             },
-            async submit() {                
+            async submit() {
                 var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
                 if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
@@ -112,18 +112,23 @@
                 }
                 var destinataryKey = setPublicKey(response.data)
                 var message = this.message
-                message = { 'sender': publicKey.encrypt(message, 'base64'), 'destinatary': destinataryKey.encrypt(message, 'base64') }
+                message = {
+                    'sender': publicKey.encrypt(message, 'base64'),
+                    'destinatary': destinataryKey.encrypt(message, 'base64')
+                }
                 message = privateKey.encryptPrivate(JSON.stringify(message), 'base64')
                 var packet = {
                     'message': message,
                     'sender': this.userName,
-                    'destinatary': this.destinatary
+                    'destinatary': this.destinatary,
+                    'hash': CryptoJS.SHA512(message + this.userName + this.destinatary).toString()
                 }
                 var encryptedpacket = serverKey.encrypt(JSON.stringify(packet), 'base64')
                 sendMessage(encryptedpacket)                
+                await this.refresh()
+                this.page = 'sentMessages'
                 this.message = ''
                 this.destinatary = ''
-                this.page = 'sentMessages'
             },
             async checkUser() {
                 var response = await axios.get('http://localhost:8080/client/' + this.userName)
@@ -138,9 +143,9 @@
             changePage(newPage) {
                 this.page = newPage
             },
-            refresh() {
-                this.getMessages('arrived')
-                this.getMessages('sent')
+            async refresh() {
+                await this.getMessages('arrived')
+                await this.getMessages('sent')
             },
             async sign() {
                 var checked = await this.checkUser()

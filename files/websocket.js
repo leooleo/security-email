@@ -57,6 +57,8 @@ socket.onclose = function (event) {
     } else {
         console.log('[close] Connection died')
     }
+    console.log('[reconnect] Trying to reconnect')
+    socket = new WebSocket("ws://localhost:8080/")
 }
 
 socket.onerror = function (error) {

@@ -3,8 +3,9 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT || 8080
 const crypto = require('./src/encryptionWrapper')
-const cors = require('cors');
-const fs = require('fs');
+const cors = require('cors')
+const fs = require('fs')
+const CryptoJS = require("crypto-js")
 
 var root = __dirname + '/files/'
 
@@ -22,34 +23,34 @@ var arrivedMessages = {}
 getKeys()
 
 app.get('/signup', function (req, res) {
-    res.sendFile(root + 'signup.html');
+    res.sendFile(root + 'signup.html')
 })
 
 app.get('/', function (req, res) {
-    res.sendFile(root + 'signin.html');
+    res.sendFile(root + 'signin.html')
 })
 
 app.get('/index', function (req, res) {
-    res.sendFile(root + 'index.html');
+    res.sendFile(root + 'index.html')
 })
 
 app.get('/arrived/:client', function (req, res) {
     var client = req.params.client;
     var packet = arrivedMessages[client]
-    res.json(packet);
+    res.json(packet)
 })
 
 app.get('/sent/:client', function (req, res) {
     var client = req.params.client;
     var packet = sentMessages[client]
-    res.json(packet);
+    res.json(packet)
 })
 
 app.get('/clear', function (req, res) {
     clients = {}
     sentMessages = {}
     arrivedMessages = {}
-    res.send('ok');
+    res.send('ok')
 })
 
 app.get('/key/:client', function (req, res) {
@@ -75,19 +76,19 @@ app.get('/client/:client', function (req, res) {
 
 app.get('/bundle.js', function (req, res) {
     res.type('.js')
-    res.sendFile(root + 'bundle.js');
+    res.sendFile(root + 'bundle.js')
 })
 
 app.get('/crypto-js.js', function (req, res) {
     res.type('.js')
     // res.sendFile(__dirname + '/bower_components/crypto-js/crypto-js.js')
-    res.sendFile(root + 'crypto-js.js');
+    res.sendFile(root + 'crypto-js.js')
 
 })
 
 app.get('/websocket.js', function (req, res) {
     res.type('.js')
-    res.sendFile(root + 'websocket.js');
+    res.sendFile(root + 'websocket.js')
 })
 
 webSocketServer.on('connection', function connection(socket) {
@@ -115,12 +116,22 @@ function handlePublicKey(message) {
 
 function handleMessage(message) {
     try {
+        console.log('Received message')
         var decrypted = privateKey.decrypt(message, 'utf-8')
         var packet = JSON.parse(decrypted)
 
         var destinatary = packet['destinatary']
         var message = packet['message']
         var sender = packet['sender']
+        var hash = CryptoJS.SHA512(message + sender + destinatary).toString()
+
+        if(hash == packet['hash']) {
+            console.log('Message hash verified')
+        }
+        else {
+            console.log('Message was corrupted!')
+            return
+        }
 
         var thisClientKey = clients[sender]
 
@@ -141,8 +152,8 @@ function handleMessage(message) {
         }
 
     } catch (error) {
-        console.log(error);
-        console.log('Plain text message: ' + message);
+        console.log(error)
+        console.log('Plain text message: ' + message)
     }
 }
 
