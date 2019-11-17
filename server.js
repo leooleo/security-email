@@ -158,6 +158,9 @@ function handleMessage(message) {
 }
 
 function getKeys() {
+    if (!fs.existsSync('ssl/')){
+        fs.mkdirSync('ssl/');
+    }
     // Check if there are keys already stored
     var files = fs.readdirSync('ssl/')    
     // If there aren't create and store new ones
