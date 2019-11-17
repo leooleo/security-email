@@ -4,7 +4,7 @@ var serverPublic = null
 var myName = null
 var password = null 
 
-let socket = new WebSocket("wss://meomail.herokuapp.com/")
+let socket = new WebSocket("ws://localhost:8080/")
 
 // communication is started by sendind local public key
 window.startCommunication = function startCommunication(name, pwd) {

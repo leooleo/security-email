@@ -1,5 +1,5 @@
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+    <script src="crypto-js.js" type="text/javascript"></script>
     <script src="bundle.js" type="text/javascript"></script>
     <script src="signupWs.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
@@ -24,9 +24,9 @@
     </div>
 </body>
 
-<script>
+<script>    
     localStorage.clear()
-    if(localStorage['pwd'] != null) {        
+    if (localStorage['pwd'] != null) {
         window.location.href = '/'
     }
     var signup = new Vue({
@@ -38,7 +38,7 @@
         },
         methods: {
             async checkUser() {
-                var response = await axios.get('https://meomail.herokuapp.com/client/' + this.userName)
+                var response = await axios.get('http://localhost:8080/client/' + this.userName)
                 if (response.data == 'no such client') {
                     this.usercheck = true
                 }
@@ -47,10 +47,8 @@
                 }
             },
             submit() {
-                var hash = forge.md.sha256.create()
-                hash.update(this.password)
-                var hashed = hash.digest().toHex()
-                startCommunication(this.userName, hashed)
+                var hash = CryptoJS.SHA512(this.password).toString()              
+                startCommunication(this.userName, hash)
             }
         }
     })

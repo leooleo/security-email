@@ -75,6 +75,13 @@ app.get('/bundle.js', function (req, res) {
     res.sendFile(root + 'bundle.js');
 })
 
+app.get('/crypto-js.js', function (req, res) {
+    res.type('.js')
+    // res.sendFile(__dirname + '/bower_components/crypto-js/crypto-js.js')
+    res.sendFile(root + 'crypto-js.js');
+
+})
+
 app.get('/signupWs.js', function (req, res) {
     res.type('.js')
     res.sendFile(root + 'signupWs.js');

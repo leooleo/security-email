@@ -1,5 +1,5 @@
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+    <script src="crypto-js.js" type="text/javascript"></script>
     <script src="bundle.js" type="text/javascript"></script>
     <script src="signupWs.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
@@ -60,7 +60,7 @@
     </div>
 </body>
 
-<script>
+<script>    
     if (localStorage['pwd'] == null) {
         window.location.href = '/signup'
     }
@@ -89,9 +89,9 @@
             arrivedMessages: [],
             sentMessages: []
         },
-        methods: {
+        methods: {            
             async getMessages(type) {
-                var response = await axios.get(`https://meomail.herokuapp.com/${type}/` + this.userName)
+                var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
                 var data = response.data
                 console.log(data);
                 for (let i = 0; i < data.length; i++) {
@@ -109,7 +109,7 @@
                     this.sentMessages = data
             },
             async submit() {
-                var response = await axios.get('https://meomail.herokuapp.com/key/' + this.destinatary)
+                var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
                 if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
                     return
@@ -130,7 +130,7 @@
                 this.destinatary = ''
             },
             async checkUser() {
-                var response = await axios.get('https://meomail.herokuapp.com/client/' + this.userName)
+                var response = await axios.get('http://localhost:8080/client/' + this.userName)
                 if (response.data == 'no such client') {
                     alert('No such user')
                 }
@@ -146,11 +146,9 @@
                 this.getMessages('sent')
             },
             sign() {
-                var hash = forge.md.sha256.create()
-                hash.update(this.password)
-                var hashed = hash.digest().toHex()
+                var hash = CryptoJS.SHA512(this.password).toString()
                 var pwd = localStorage['pwd']
-                if (pwd == hashed) {
+                if (pwd == hash) {
                     this.signed = true
                     setSession()
                     this.getMessages('arrived')
