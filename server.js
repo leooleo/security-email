@@ -82,9 +82,9 @@ app.get('/crypto-js.js', function (req, res) {
 
 })
 
-app.get('/signupWs.js', function (req, res) {
+app.get('/websocket.js', function (req, res) {
     res.type('.js')
-    res.sendFile(root + 'signupWs.js');
+    res.sendFile(root + 'websocket.js');
 })
 
 webSocketServer.on('connection', function connection(socket) {

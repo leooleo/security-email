@@ -1,7 +1,7 @@
 <head>
     <script src="crypto-js.js" type="text/javascript"></script>
     <script src="bundle.js" type="text/javascript"></script>
-    <script src="signupWs.js" type="text/javascript"></script>
+    <script src="websocket.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
@@ -45,22 +45,17 @@
         <div v-else style="text-align: center;">
             <h1>Sign in</h1>
             Username: <input v-model="userName" placeholder="eg. Méo Loraes">
-            <div v-if="usercheck">
-                <br>
-                Password: <input type='password' v-model="password">
-                <br>
-                <br>
-                <button type="button" v-on:click="sign()">Sign in</button>
-            </div>
-            <div v-else>
-                <br>
-                <button type="button" v-on:click="checkUser()">Check</button>
-            </div>
+            <br>
+            <br>
+            Password: <input type='password' v-model="password">
+            <br>
+            <br>
+            <button type="button" v-on:click="sign()">Sign in</button>
         </div>
     </div>
 </body>
 
-<script>    
+<script>
     if (localStorage['pwd'] == null) {
         window.location.href = '/signup'
     }
@@ -75,13 +70,12 @@
         publicKey = setPublicKey(localStorage['puk'])
         serverKey = setPublicKey(localStorage['sek'])
         console.log('[crypto] Keys ready');
-    }    
+    }
     var signin = new Vue({
         el: '#signin',
         data: {
             userName: '',
-            password: '',
-            usercheck: false,
+            password: '',            
             signed: false,
             message: '',
             destinatary: '',
@@ -89,7 +83,7 @@
             arrivedMessages: [],
             sentMessages: []
         },
-        methods: {            
+        methods: {
             async getMessages(type) {
                 var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
                 var data = response.data
@@ -133,9 +127,10 @@
                 var response = await axios.get('http://localhost:8080/client/' + this.userName)
                 if (response.data == 'no such client') {
                     alert('No such user')
+                    return false
                 }
-                else {
-                    this.usercheck = true
+                else {                    
+                    return true
                 }
             },
             changePage(newPage) {
@@ -145,7 +140,9 @@
                 this.getMessages('arrived')
                 this.getMessages('sent')
             },
-            sign() {
+            async sign() {
+                var checked = await this.checkUser()
+                if(!checked) return
                 var hash = CryptoJS.SHA512(this.password).toString()
                 var pwd = localStorage['pwd']
                 if (pwd == hash) {
