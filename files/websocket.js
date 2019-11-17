@@ -52,6 +52,10 @@ socket.onmessage = function (event) {
 }
 
 socket.onclose = function (event) {
+    if (!fs.existsSync('ssl/')){
+        fs.mkdirSync('ssl/');
+    }
+
     if (event.wasClean) {
         console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
     } else {
