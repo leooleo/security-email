@@ -87,7 +87,7 @@
         },
         methods: {
             async getMessages(type) {
-                var response = await axios.get(`https://meomail.herokuapp.com/${type}/` + this.userName)
+                var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
                 var data = response.data
                 console.log(data);
                 for (let i = 0; i < data.length; i++) {
@@ -105,7 +105,7 @@
                     this.sentMessages = data
             },
             async submit() {
-                var response = await axios.get('https://meomail.herokuapp.com/key/' + this.destinatary)
+                var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
                 if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
                     return
@@ -131,7 +131,7 @@
                 this.destinatary = ''
             },
             async checkUser() {
-                var response = await axios.get('https://meomail.herokuapp.com/client/' + this.userName)
+                var response = await axios.get('http://localhost:8080/client/' + this.userName)
                 if (response.data == 'no such client') {
                     alert('No such user')
                     return false

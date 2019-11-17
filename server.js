@@ -6,6 +6,8 @@ const crypto = require('./src/encryptionWrapper')
 const cors = require('cors')
 const fs = require('fs')
 const CryptoJS = require("crypto-js")
+const dataBaseWrapper = require('./database/dbWrapper').dataBaseWrapper
+const db = new dataBaseWrapper()
 
 var root = __dirname + '/files/'
 
@@ -16,11 +18,11 @@ const webSocketServer = new WebSocket.Server({ server: server })
 
 var privateKey = null
 var publicKey = null
-var clients = {}
 var sentMessages = {}
 var arrivedMessages = {}
 
 getKeys()
+db.connect()
 
 app.get('/signup', function (req, res) {
     res.sendFile(root + 'signup.html')
@@ -46,27 +48,21 @@ app.get('/sent/:client', function (req, res) {
     res.json(packet)
 })
 
-app.get('/clear', function (req, res) {
-    clients = {}
-    sentMessages = {}
-    arrivedMessages = {}
-    res.send('ok')
-})
-
-app.get('/key/:client', function (req, res) {
+app.get('/key/:client', async function (req, res) {
     var client = req.params.client
-    if (client in clients) {
-        var packet = crypto.getPublicKey(clients[client])
-        res.send(packet)
+    var key = await db.getUserKey(client)
+    if (key != null) {        
+        res.send(key)
     }
     else {
         res.send('no such client')
     }
 })
 
-app.get('/client/:client', function (req, res) {
+app.get('/client/:client', async function (req, res) {
     var client = req.params.client
-    if (client in clients) {
+    var userExist = await db.userExists(client)
+    if (userExist) {
         res.send('taken')
     }
     else {
@@ -104,17 +100,19 @@ webSocketServer.on('connection', function connection(socket) {
     })
 })
 
-function handlePublicKey(message) {
+async function handlePublicKey(message) {
     message = message.split('user:')
     var clientPublicKey = crypto.setPublicKey(message[0])
-    var userName = message[1]
+    var userName = message[1]    
 
-    clients[userName] = clientPublicKey
+    var result = await db.insertUser(userName, clientPublicKey.exportKey('public'))
+    if (result)
+        console.log('User inserted successfully')
 
     console.log('Received public key from client ' + userName)
 }
 
-function handleMessage(message) {
+async function handleMessage(message) {
     try {
         console.log('Received message')
         var decrypted = privateKey.decrypt(message, 'utf-8')
@@ -133,7 +131,7 @@ function handleMessage(message) {
             return
         }
 
-        var thisClientKey = clients[sender]
+        var thisClientKey = crypto.setPublicKey(await db.getUserKey(sender))
 
         var finalMessage = thisClientKey.decryptPublic(message, 'utf-8')
         var receivedPacket = JSON.parse(finalMessage)
@@ -176,5 +174,4 @@ function getKeys() {
     content = fs.readFileSync('ssl/private.pem')
     privateKey = crypto.setPrivateKey(content)
     console.log('Readed!')
-
 }
