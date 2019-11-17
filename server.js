@@ -125,7 +125,7 @@ function handleMessage(message) {
         var sender = packet['sender']
         var hash = CryptoJS.SHA512(message + sender + destinatary).toString()
 
-        if(hash == packet['hash']) {
+        if (hash == packet['hash']) {
             console.log('Message hash verified')
         }
         else {
@@ -138,17 +138,17 @@ function handleMessage(message) {
         var finalMessage = thisClientKey.decryptPublic(message, 'utf-8')
         var receivedPacket = JSON.parse(finalMessage)
 
-        if(destinatary in arrivedMessages) {
-            arrivedMessages[destinatary].push({'sender': sender, 'message' : receivedPacket['destinatary']})
+        if (destinatary in arrivedMessages) {
+            arrivedMessages[destinatary].push({ 'sender': sender, 'message': receivedPacket['destinatary'] })
         }
         else {
-            arrivedMessages[destinatary] = [{'sender': sender, 'message' : receivedPacket['destinatary']}]
+            arrivedMessages[destinatary] = [{ 'sender': sender, 'message': receivedPacket['destinatary'] }]
         }
-        if(sender in sentMessages) {
-            sentMessages[sender].push({'destinatary': destinatary, 'message': receivedPacket['sender']})
+        if (sender in sentMessages) {
+            sentMessages[sender].push({ 'destinatary': destinatary, 'message': receivedPacket['sender'] })
         }
         else {
-            sentMessages[sender] = [{'destinatary': destinatary, 'message': receivedPacket['sender']}]
+            sentMessages[sender] = [{ 'destinatary': destinatary, 'message': receivedPacket['sender'] }]
         }
 
     } catch (error) {
@@ -158,24 +158,23 @@ function handleMessage(message) {
 }
 
 function getKeys() {
-    if (!fs.existsSync('ssl/')){
+    if (!fs.existsSync('ssl/')) {
         fs.mkdirSync('ssl/');
     }
     // Check if there are keys already stored
-    var files = fs.readdirSync('ssl/')    
+    var files = fs.readdirSync('ssl/')
     // If there aren't create and store new ones
-    if(files.length == 0) {        
+    if (files.length == 0) {
         var keys = crypto.generateKeyPair()
-        publicKey = crypto.getPublicKey(keys)
         fs.writeFileSync('ssl/public.pem', keys.exportKey('public'))
         fs.writeFileSync('ssl/private.pem', keys.exportKey('private'))
     }
-    else {
-        console.log('Reading key Pair...')
-        var content = fs.readFileSync('ssl/public.pem')
-        publicKey = crypto.setPublicKey(content)
-        content = fs.readFileSync('ssl/private.pem')
-        privateKey = crypto.setPrivateKey(content)
-        console.log('Readed!')
-    }
+
+    console.log('Reading key Pair...')
+    var content = fs.readFileSync('ssl/public.pem')
+    publicKey = crypto.setPublicKey(content)
+    content = fs.readFileSync('ssl/private.pem')
+    privateKey = crypto.setPrivateKey(content)
+    console.log('Readed!')
+
 }
