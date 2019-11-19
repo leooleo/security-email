@@ -9,8 +9,8 @@ CREATE TABLE messages (
     messageId SERIAL,
     senderId int NOT NULL,
     destinataryId int NOT NULL,
-    messageSender VARCHAR(300),
-    messageDestinatary VARCHAR(300),
+    messageSender VARCHAR(450),
+    messageDestinatary VARCHAR(450),
     PRIMARY KEY (messageId),
     FOREIGN KEY (senderId) REFERENCES account(userId),
     FOREIGN KEY (destinataryId) REFERENCES account(userId)

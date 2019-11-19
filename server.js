@@ -36,22 +36,38 @@ app.get('/index', function (req, res) {
     res.sendFile(root + 'index.html')
 })
 
-app.get('/arrived/:client', function (req, res) {
-    var client = req.params.client;
-    var packet = arrivedMessages[client]
-    res.json(packet)
+app.get('/arrived/:client', async function (req, res) {
+    var client = req.params.client
+    var clientId = await db.getUserId(client)
+
+    var messages = await db.getArrivedMessages(clientId)
+    var result = []    
+    for (let index = 0; index < messages.length; index++) {
+        const obj = messages[index];
+        const userName = await db.getUserName(obj['senderid'])
+        result.push({'message': obj['messagedestinatary'], 'sender': userName})
+    }    
+    res.json(result)
 })
 
-app.get('/sent/:client', function (req, res) {
-    var client = req.params.client;
-    var packet = sentMessages[client]
-    res.json(packet)
+app.get('/sent/:client', async function (req, res) {
+    var client = req.params.client
+    var clientId = await db.getUserId(client)
+
+    var messages = await db.getSentMessages(clientId)
+    var result = []    
+    for (let index = 0; index < messages.length; index++) {
+        const obj = messages[index];
+        const userName = await db.getUserName(obj['destinataryid'])
+        result.push({'message': obj['messagesender'], 'destinatary': userName})
+    }    
+    res.json(result)
 })
 
 app.get('/key/:client', async function (req, res) {
     var client = req.params.client
     var key = await db.getUserKey(client)
-    if (key != null) {        
+    if (key != null) {
         res.send(key)
     }
     else {
@@ -77,7 +93,6 @@ app.get('/bundle.js', function (req, res) {
 
 app.get('/crypto-js.js', function (req, res) {
     res.type('.js')
-    // res.sendFile(__dirname + '/bower_components/crypto-js/crypto-js.js')
     res.sendFile(root + 'crypto-js.js')
 
 })
@@ -103,7 +118,7 @@ webSocketServer.on('connection', function connection(socket) {
 async function handlePublicKey(message) {
     message = message.split('user:')
     var clientPublicKey = crypto.setPublicKey(message[0])
-    var userName = message[1]    
+    var userName = message[1]
 
     var result = await db.insertUser(userName, clientPublicKey.exportKey('public'))
     if (result)
@@ -132,22 +147,16 @@ async function handleMessage(message) {
         }
 
         var thisClientKey = crypto.setPublicKey(await db.getUserKey(sender))
+        var finalMessage = ''
+        try {
+            finalMessage = thisClientKey.decryptPublic(message, 'utf-8')
+        } catch (error) {
+            console.log('Message was somehow altered. The source is not the one claimed')
+        }
 
-        var finalMessage = thisClientKey.decryptPublic(message, 'utf-8')
         var receivedPacket = JSON.parse(finalMessage)
 
-        if (destinatary in arrivedMessages) {
-            arrivedMessages[destinatary].push({ 'sender': sender, 'message': receivedPacket['destinatary'] })
-        }
-        else {
-            arrivedMessages[destinatary] = [{ 'sender': sender, 'message': receivedPacket['destinatary'] }]
-        }
-        if (sender in sentMessages) {
-            sentMessages[sender].push({ 'destinatary': destinatary, 'message': receivedPacket['sender'] })
-        }
-        else {
-            sentMessages[sender] = [{ 'destinatary': destinatary, 'message': receivedPacket['sender'] }]
-        }
+        db.insertMessage(sender, destinatary, receivedPacket['sender'], receivedPacket['destinatary'])
 
     } catch (error) {
         console.log(error)

@@ -88,16 +88,12 @@
         methods: {
             async getMessages(type) {
                 var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
-                var data = response.data
-                console.log(data);
-                for (let i = 0; i < data.length; i++) {
-                    var obj = data[i]
-
-                    var message = obj['message']
+                var data = response.data                
+                for (let i = 0; i < data.length; i++) {                
+                    var message = data[i]['message']                    
                     var decryptedMessage = privateKey.decrypt(message, 'utf-8')
 
-                    obj['message'] = decryptedMessage
-                    data[i] = obj
+                    data[i]['message'] = decryptedMessage                    
                 }
                 if (type == 'arrived')
                     this.arrivedMessages = data
