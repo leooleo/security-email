@@ -7,7 +7,7 @@ var password = null
 var socket
 
 // communication is started by sendind local public key
-window.startCommunication = function startCommunication(name, pwd) {
+window.startCommunication = async function startCommunication(name, pwd) {
     myName = name
     password = pwd
     keys = generateKeyPair()
@@ -58,7 +58,7 @@ const errorWs = (error) => {
 }
 
 function connectSocket() {
-    socket = new WebSocket('wss://meomail.herokuapp.com/')
+    socket = new WebSocket('ws://localhost:8080/')
     socket.addEventListener('open', openWs)
     socket.addEventListener('message', messageWs)
     socket.addEventListener('close', closeWs)

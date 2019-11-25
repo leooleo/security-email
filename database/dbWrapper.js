@@ -5,7 +5,7 @@ class dataBaseWrapper {
 
     async connect() {
         await this.client.connect()
-        console.log('Connected!')
+        console.log('Database connected')
     }
 
     async insertUser(username, puk) {

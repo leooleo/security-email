@@ -13,7 +13,7 @@ var root = __dirname + '/files/'
 
 app.use(cors())
 
-const server = app.listen(port, () => console.log(`Listening on port ${port}!`))
+const server = app.listen(port, () => console.log(`Listening on port ${port}`))
 const webSocketServer = new WebSocket.Server({ server: server })
 
 var privateKey = null
@@ -182,5 +182,5 @@ function getKeys() {
     publicKey = crypto.setPublicKey(content)
     content = fs.readFileSync('ssl/private.pem')
     privateKey = crypto.setPrivateKey(content)
-    console.log('Readed!')
+    console.log('Read!')
 }
