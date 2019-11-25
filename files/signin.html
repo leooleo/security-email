@@ -4,6 +4,8 @@
     <script src="websocket.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 
 <body>
@@ -16,41 +18,76 @@
                 <a href="#" v-on:click="refresh()">refresh</a>
             </div>
             <div v-if=" page == 'sendMessage' " style="text-align: center;">
-                <h1>Send Message</h1>
-                To: <input v-model="destinatary" placeholder="eg. Méo Loraes">
-                <br>
-                <br>
-                Message: <input v-model="message" placeholder="eg. Fala meu parça">
-                <br>
-                <br>
-                <button type="button" v-on:click="submit()">Submit message</button>
+                <h1 id="subheader">Send a message</h1>
+
+                <div class="form-group" style="margin-top: 40px;">
+                    <label for="form">Destinatary:</label>
+                    <input v-model="destinatary" class="form-control" id="form" placeholder="destinatary name...">
+                </div>
+
+                <div class="form-group">
+                    <label for="form">Message:</label>
+                    <input v-model="message" class="form-control" id="form" placeholder="Message (E.g 'Hey Man!')">
+                </div>
+                <button style="margin-top: 30px;" type="button" class="btn btn-primary" v-on:click="submit()">Submit
+                    message</button>
+
+                <div v-if="status == 'sending' ">
+                    <h5 id="status-message">Sending message... </h5>
+                    <div id="spin" style="width: 20px;height: 20px;" class="spinner-border text-primary" role="status">
+                    </div>
+                </div>
+                <div v-else-if="status == 'sent' ">
+                    <h5 id="status-message" class="text-success">Sent!</h5>
+                </div>
             </div>
             <div v-else-if=" page == 'arrivedMessages' ">
-                <h1 style="text-align: center;"> Arrived Messages</h1>
-                <ul>
-                    <li v-for="msg in arrivedMessages" style="text-align: left; padding-left: 30px;">
-                        From {{ msg['sender'] }}: {{ msg['message'] }}
+                <h1 id="subheader">Arrived Messages</h1>
+
+                <div v-if="status == 'refreshing' " style="text-align: center;">
+                    <h5 id="status-message">Refreshing...</h5>
+                    <div id="spin" style="width: 20px;height: 20px;margin-bottom: 20px;"
+                        class="spinner-border text-primary" role="status">
+                    </div>
+                </div>
+
+                <ul class="list-group">
+                    <li class="list-group-item" id="item" v-for="msg in arrivedMessages">
+                        <b>{{ msg['sender'] }}:</b> {{ msg['message'] }}
                     </li>
                 </ul>
             </div>
             <div v-else-if=" page == 'sentMessages' ">
-                <h1 style="text-align: center;"> Sent Messages</h1>
-                <ul>
-                    <li v-for="msg in sentMessages" style="text-align: left; padding-left: 30px;">
-                        To {{ msg['destinatary'] }}: {{ msg['message'] }}
+                <h1 id="subheader"> Sent Messages</h1>
+
+                <div v-if="status == 'refreshing' " style="text-align: center;">
+                    <h5 id="status-message">Refreshing...</h5>
+                    <div id="spin" style="width: 20px;height: 20px;margin-bottom: 20px;"
+                        class="spinner-border text-primary" role="status">
+                    </div>
+                </div>
+
+                <ul class="list-group">
+                    <li class="list-group-item" id="item" v-for="msg in sentMessages"
+                        style="text-align: left; padding-left: 30px;">
+                        <b>To {{ msg['destinatary'] }}:</b> {{ msg['message'] }}
                     </li>
                 </ul>
             </div>
         </div>
         <div v-else style="text-align: center;">
-            <h1>Sign in</h1>
-            Username: <input v-model="userName" placeholder="eg. Méo Loraes">
-            <br>
-            <br>
-            Password: <input type='password' v-model="password">
-            <br>
-            <br>
-            <button type="button" v-on:click="sign()">Sign in</button>
+            <h1 id="header">Sign in</h1>
+            <div class="form-group">
+                <label for="form">User name:</label>
+                <input v-model="userName" class="form-control" id="form" placeholder="Enter user name">
+                <small id="emailHelp" class="form-text text-muted">We'll never share your username with anyone
+                    else.</small>
+            </div>
+            <div class="form-group">
+                <label for="form">Password</label>
+                <input type="password" v-model="password" class="form-control" id="form" placeholder="Password">
+            </div>
+            <button type="button" class="btn btn-primary" v-on:click="sign()">Sign in</button>
         </div>
     </div>
 </body>
@@ -83,17 +120,18 @@
             destinatary: '',
             page: 'arrivedMessages',
             arrivedMessages: [],
-            sentMessages: []
+            sentMessages: [],
+            status: ''
         },
         methods: {
             async getMessages(type) {
                 var response = await axios.get(`http://localhost:8080/${type}/` + this.userName)
-                var data = response.data                
-                for (let i = 0; i < data.length; i++) {                
-                    var message = data[i]['message']                    
+                var data = response.data
+                for (let i = 0; i < data.length; i++) {
+                    var message = data[i]['message']
                     var decryptedMessage = privateKey.decrypt(message, 'utf-8')
 
-                    data[i]['message'] = decryptedMessage                    
+                    data[i]['message'] = decryptedMessage
                 }
                 if (type == 'arrived')
                     this.arrivedMessages = data
@@ -101,6 +139,7 @@
                     this.sentMessages = data
             },
             async submit() {
+                this.status = 'sending'
                 var response = await axios.get('http://localhost:8080/key/' + this.destinatary)
                 if (response.data == 'no such client') {
                     alert('Destinatary does not exist')
@@ -120,9 +159,8 @@
                     'hash': CryptoJS.SHA512(message + this.userName + this.destinatary).toString()
                 }
                 var encryptedpacket = serverKey.encrypt(JSON.stringify(packet), 'base64')
-                sendMessage(encryptedpacket)                
-                await this.refresh()
-                this.page = 'sentMessages'
+                sendMessage(encryptedpacket)
+                this.status = 'sent'
                 this.message = ''
                 this.destinatary = ''
             },
@@ -138,10 +176,18 @@
             },
             changePage(newPage) {
                 this.page = newPage
+                if(newPage == 'arrivedMessages')
+                    this.refresh('arrived')
+                else if(newPage == 'sentMessages')
+                    this.refresh('sent')
             },
-            async refresh() {
-                await this.getMessages('arrived')
-                await this.getMessages('sent')
+            async refresh(ref) {
+                this.status = 'refreshing'
+                if (this.page == 'arrivedMessages' || ref == 'arrived')
+                    await this.getMessages('arrived')
+                else if (this.page == 'sentMessages' || ref == 'sent')
+                    await this.getMessages('sent')
+                this.status = ''
             },
             async sign() {
                 var checked = await this.checkUser()
@@ -152,8 +198,7 @@
                 if (pwd == hash) {
                     this.signed = true
                     setSession(this.password)
-                    this.getMessages('arrived')
-                    this.getMessages('sent')
+                    this.refresh('arrived')
                 }
                 else {
                     alert('Incorrect Password');
@@ -162,3 +207,33 @@
         }
     })
 </script>
+<style>
+    #header {
+        font-size: 400%;
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 40px;
+    }
+
+    #subheader {
+        font-size: 300%;
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 40px;
+    }
+
+    #form {
+        margin: 0 auto;
+        width: 40%;
+    }
+
+    #item {
+        text-align: left;
+        margin-left: 30px;
+        width: 60%;
+    }
+
+    #status-message {
+        margin-top: 20px;
+    }
+</style>
