@@ -18,23 +18,9 @@ const webSocketServer = new WebSocket.Server({ server: server })
 
 var privateKey = null
 var publicKey = null
-var sentMessages = {}
-var arrivedMessages = {}
 
 getKeys()
 db.connect()
-
-app.get('/signup', function (req, res) {
-    res.sendFile(root + 'signup.html')
-})
-
-app.get('/', function (req, res) {
-    res.sendFile(root + 'signin.html')
-})
-
-app.get('/index', function (req, res) {
-    res.sendFile(root + 'index.html')
-})
 
 app.get('/arrived/:client', async function (req, res) {
     var client = req.params.client
@@ -86,22 +72,6 @@ app.get('/client/:client', async function (req, res) {
     }
 })
 
-app.get('/bundle.js', function (req, res) {
-    res.type('.js')
-    res.sendFile(root + 'bundle.js')
-})
-
-app.get('/crypto-js.js', function (req, res) {
-    res.type('.js')
-    res.sendFile(root + 'crypto-js.js')
-
-})
-
-app.get('/websocket.js', function (req, res) {
-    res.type('.js')
-    res.sendFile(root + 'websocket.js')
-})
-
 webSocketServer.on('connection', function connection(socket) {
     socket.on('message', function incoming(message) {
         if (message.includes('BEGIN PUBLIC KEY')) {
@@ -113,6 +83,39 @@ webSocketServer.on('connection', function connection(socket) {
             handleMessage(message)
         }
     })
+})
+// Static Files
+app.get('/signup', function (req, res) {
+    res.sendFile(root + 'html/signup.html')
+})
+
+app.get('/', function (req, res) {
+    res.sendFile(root + 'html/index.html')
+})
+
+app.get('/ls', function (req, res) {
+    res.sendFile(root + 'html/ls.html')
+})
+
+app.get('/rsa.js', function (req, res) {
+    res.type('.js')
+    res.sendFile(root + 'js/rsa.js')
+})
+
+app.get('/index.css', function (req, res) {
+    res.type('.css')
+    res.sendFile(root + 'css/index.css')
+})
+
+app.get('/crypto-js.js', function (req, res) {
+    res.type('.js')
+    res.sendFile(root + 'js/crypto-js.js')
+
+})
+
+app.get('/websocket.js', function (req, res) {
+    res.type('.js')
+    res.sendFile(root + 'js/websocket.js')
 })
 
 async function handlePublicKey(message) {
