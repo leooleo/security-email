@@ -58,7 +58,7 @@ const errorWs = (error) => {
 }
 
 function connectSocket() {
-    socket = new WebSocket('ws://localhost:8080/')
+    socket = new WebSocket('wss://meomail.herokuapp.com/')
     socket.addEventListener('open', openWs)
     socket.addEventListener('message', messageWs)
     socket.addEventListener('close', closeWs)

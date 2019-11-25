@@ -57,7 +57,7 @@
         },
         methods: {
             async checkUser() {
-                var response = await axios.get('http://localhost:8080/client/' + this.userName)
+                var response = await axios.get('https://meomail.herokuapp.com/client/' + this.userName)
                 if (response.data == 'no such client') {
                     this.usercheck = true
                 }
